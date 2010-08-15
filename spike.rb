@@ -33,6 +33,15 @@ module RedRock
     end
   end
 
+  def start
+    web_server = Thread.new do
+      Thin::Server.start('0.0.0.0', 3030) do
+        run RedRock::Server.instance
+      end
+    end
+    web_server.join
+  end
+
   def method_missing name, *args, &block
     super unless Server.instance.respond_to? name
     Server.instance.send name, *args, &block
@@ -41,12 +50,5 @@ end
 
 include RedRock
 
-web_server = Thread.new do
-  Thin::Server.start('0.0.0.0', 3030) do
-    run RedRock::Server.instance
-  end
-end
-
 stub_request :any, "localhost:3030/foo"
-
-web_server.join
+Server.start
