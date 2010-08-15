@@ -1,12 +1,15 @@
 require "thin"
 require "net/http"
 require "webmock"
+require "webmock/rspec"
+require "curb"
 
 
 module RedRock
   class Server
-    include WebMock
     include Singleton
+    include WebMock
+    include WebMock::Matchers
 
     def call env
       request = Rack::Request.new env
@@ -56,5 +59,12 @@ include RedRock
 stub_request :any, "localhost:3030/foo"
 
 Server.start
-sleep 10
+
+curl = Curl::Easy.http_get "http://localhost:3030/bar"
+curl.response_code.should == 500
+
+curl = Curl::Easy.http_get "http://localhost:3030/foo"
+curl.response_code.should == 200
+RedRock.should have_requested(:get, "localhost:3030/foo")
+
 Server.stop
