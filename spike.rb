@@ -37,4 +37,6 @@ web_server = Thread.new do
   end
 end
 
+server.stub_request :any, "localhost:3030/foo"
+
 web_server.join
