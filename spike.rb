@@ -50,6 +50,7 @@ module RedRock
 
   def method_missing name, *args, &block
     super unless Server.instance.respond_to? name
+    start unless @server_thread
     Server.instance.send name, *args, &block
   end
 end
@@ -58,13 +59,9 @@ include RedRock
 
 stub_request :any, "localhost:3030/foo"
 
-Server.start
-
 curl = Curl::Easy.http_get "http://localhost:3030/bar"
 curl.response_code.should == 500
 
 curl = Curl::Easy.http_get "http://localhost:3030/foo"
 curl.response_code.should == 200
 RedRock.should have_requested(:get, "localhost:3030/foo")
-
-Server.stop
