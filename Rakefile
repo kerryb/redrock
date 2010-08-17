@@ -25,7 +25,7 @@ spec = Gem::Specification.new do |s|
   s.extra_rdoc_files  = %w(README.rdoc)
   s.rdoc_options      = %w(--main README.rdoc)
 
-  s.files             = Dir.glob("{spec/**,lib/**}")
+  s.files             = Dir.glob("{spec/**/*,lib/**/*}")
   s.require_paths     = ["lib"]
 
   s.add_dependency "thin", "~> 1.0"
