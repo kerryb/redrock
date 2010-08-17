@@ -1,0 +1,26 @@
+PATH
+  remote: .
+  specs:
+    redrock (0.0.1)
+      thin (~> 1.0)
+
+GEM
+  specs:
+    curb (0.7.7.1)
+    daemons (1.1.0)
+    eventmachine (0.12.10)
+    rack (1.2.1)
+    rspec (1.3.0)
+    thin (1.2.7)
+      daemons (>= 1.0.9)
+      eventmachine (>= 0.12.6)
+      rack (>= 1.0.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  curb
+  redrock!
+  rspec
+  thin (~> 1.0)
