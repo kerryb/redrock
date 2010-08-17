@@ -1,13 +1,31 @@
 require File.expand_path("../spec_helper", __FILE__)
 
 describe RedRock do
+  after do
+    RedRock.stop
+  end
+
   it "listens on port 4242 by default" do
     stub_request :any, "localhost:4242"
     curl = Curl::Easy.http_get "http://localhost:4242"
     curl.response_code.should == 200
   end
 
-  it "allows port to be overridden"
+  it "allows the port to be overridden" do
+    RedRock.start 4567
+    stub_request :any, "localhost:4567"
+    curl = Curl::Easy.http_get "http://localhost:4567"
+    curl.response_code.should == 200
+  end
+
+  it "silently ignores attempts to stop non-running server" do
+    lambda {RedRock.stop}.should_not raise_error
+  end
+
+  it "only runs one server at a time" do
+    RedRock.start 4567
+    lambda {RedRock.start 4568}.should raise_error(RuntimeError, "RedRock is already running")
+  end
 
   it "returns a 500 error for unexpected requests"
 
