@@ -2,8 +2,6 @@ require "thin"
 require "net/http"
 require "webmock"
 require "webmock/rspec"
-require "curb"
-
 
 module RedRock
   class Server
@@ -35,33 +33,4 @@ module RedRock
       [@response.code, response_headers, @response.body]
     end
   end
-
-  def start
-    @server_thread = Thread.new do
-      Thin::Server.start('0.0.0.0', 3030) do
-        run RedRock::Server.instance
-      end
-    end
-  end
-
-  def stop
-    @server_thread.exit
-  end
-
-  def method_missing name, *args, &block
-    super unless Server.instance.respond_to? name
-    start unless @server_thread
-    Server.instance.send name, *args, &block
-  end
 end
-
-include RedRock
-
-stub_request :any, "localhost:3030/foo"
-
-curl = Curl::Easy.http_get "http://localhost:3030/bar"
-curl.response_code.should == 500
-
-curl = Curl::Easy.http_get "http://localhost:3030/foo"
-curl.response_code.should == 200
-RedRock.should have_requested(:get, "localhost:3030/foo")
