@@ -3,6 +3,8 @@ require "net/http"
 require "webmock"
 require "webmock/rspec"
 
+Thin::Logging.silent = true
+
 module RedRock
   class Server
     include Singleton
