@@ -283,7 +283,7 @@ describe RedRock do
 
   context "replaying raw responses recorded with curl -is" do
     let(:raw_response) do
-      <<EOF
+      <<-EOF
 HTTP/1.1 200 OK
 Date: Wed, 18 Aug 2010 13:24:53 GMT
 Server: Apache/2.2.14 (Unix) mod_ssl/2.2.14 OpenSSL/0.9.8l DAV/2 Phusion_Passenger/2.2.11
@@ -294,7 +294,7 @@ Content-Length: 13
 Content-Type: text/p[ain
 
 Chunky bacon!
-EOF
+      EOF
     end
 
     shared_examples_for "a raw response" do
@@ -328,11 +328,38 @@ EOF
     end
   end
 
-  it "supports dynamically evaluating responses from a block"
+  context "dynamically evaluating responses" do
+    shared_examples_for "a dynamic response" do
+      it "returns the correct response" do
+        curl = Curl::Easy.http_post "http://localhost:4242", "!nocab yknuhC"
+        curl.body_str.should == "Chunky bacon!"
+      end
+    end
 
-  it "supports dynamically evaluating responses from a lambda"
+    context "from a block" do
+      before do
+        stub_request(:any, "localhost:4242").to_return { |request| {:body => request.body.reverse} }
+      end
 
-  it "supports responses with dynamically evaluated parts"
+      it_should_behave_like "a dynamic response"
+    end
+
+    context "from a lambda" do
+      before do
+        stub_request(:any, "localhost:4242").to_return(lambda { |request| {:body => request.body.reverse} })
+      end
+
+      it_should_behave_like "a dynamic response"
+    end
+
+    context "by part" do
+      before do
+        stub_request(:any, "localhost:4242").to_return(:body => lambda { |request| request.body.reverse })
+      end
+
+      it_should_behave_like "a dynamic response"
+    end
+  end
 
   it "supports setting multiple responses individually"
 
