@@ -361,7 +361,45 @@ Chunky bacon!
     end
   end
 
-  it "supports setting multiple responses individually"
+  context "setting multiple responses" do
+    shared_examples_for "multiple responses" do
+      it "returns the correct values" do
+        curl = Curl::Easy.new "http://localhost:4242"
+        (1..3).map do
+          curl.http_get
+          curl.body_str
+        end.should == %w(chunky chunky bacon)
+      end
+    end
+
+    context "individually" do
+      before do
+        stub_request(:get, "localhost:4242").to_return({:body => "chunky"},
+                                                       {:body => "chunky"},
+                                                       {:body => "bacon"})
+      end
+
+      it_should_behave_like "multiple responses"
+    end
+
+    context "using method chaining" do
+      before do
+        stub_request(:get, "localhost:4242").to_return({:body => "chunky"}).then.
+          to_return({:body => "chunky"}).then.to_return({:body => "bacon"})
+      end
+
+      it_should_behave_like "multiple responses"
+    end
+
+    context "specifying the number of times to return a given response" do
+      before do
+        stub_request(:get, "localhost:4242").to_return({:body => "chunky"}).times(2).then.
+          to_return({:body => "bacon"})
+      end
+
+      it_should_behave_like "multiple responses"
+    end
+  end
 
   it "supports setting multiple responses using chained methods"
 
