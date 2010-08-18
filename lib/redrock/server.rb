@@ -1,5 +1,6 @@
 require "thin"
 require "net/http"
+require "json"
 require "webmock"
 require "webmock/rspec"
 
@@ -14,14 +15,16 @@ module RedRock
     def call env
       request = Rack::Request.new env
       http_method = request.request_method
+      request_body = request.body.read
       request_headers = {}
       env.each do |k, v|
-        request_headers[k.sub(/^HTTP_/, '')] = v if k =~ /^HTTP_/
+        request_headers[k.sub(/^HTTP_/, '')] = v if k =~ /^HTTP_|CONTENT_TYPE|CONTENT_LENGTH/
       end
       begin
         ::Net::HTTP.start(request_headers["HOST"]) do |http|
           request_class = ::Net::HTTP.const_get(http_method.capitalize)
           request = request_class.new request.path_info, request_headers
+          request.body = request_body unless request_body.empty?
           @response = http.request request
         end
       rescue WebMock::NetConnectNotAllowedError => e
