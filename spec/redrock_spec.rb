@@ -281,7 +281,52 @@ describe RedRock do
     end
   end
 
-  it "supports replaying raw responses recorded with curl -is"
+  context "replaying raw responses recorded with curl -is" do
+    let(:raw_response) do
+      <<EOF
+HTTP/1.1 200 OK
+Date: Wed, 18 Aug 2010 13:24:53 GMT
+Server: Apache/2.2.14 (Unix) mod_ssl/2.2.14 OpenSSL/0.9.8l DAV/2 Phusion_Passenger/2.2.11
+Last-Modified: Mon, 29 Jun 2009 12:57:40 GMT
+ETag: "13b358c-117-46d7c3c301900"
+Accept-Ranges: bytes
+Content-Length: 13
+Content-Type: text/p[ain
+
+Chunky bacon!
+EOF
+    end
+
+    shared_examples_for "a raw response" do
+      it "returns the response" do
+        curl = Curl::Easy.http_get "http://localhost:4242"
+        curl.body_str.should == "Chunky bacon!"
+      end
+    end
+
+    context "as a file" do
+      before do
+        File.open "response", "w" do |f|
+          f.puts raw_response
+        end
+        stub_request(:any, "localhost:4242").to_return File.new("response")
+      end
+
+      after do
+        FileUtils.rm_rf "response"
+      end
+
+      it_should_behave_like "a raw response"
+    end
+
+    context "as a string" do
+      before do
+        stub_request(:any, "localhost:4242").to_return raw_response
+      end
+
+      it_should_behave_like "a raw response"
+    end
+  end
 
   it "supports dynamically evaluating responses from a block"
 
