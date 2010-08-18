@@ -1,5 +1,8 @@
 require File.expand_path("../spec_helper", __FILE__)
 
+# Mostly uses curb to avoid going via net/http, to prove that the stubbing
+# isn't happening locally.
+
 describe RedRock do
   after do
     RedRock.stop
@@ -145,17 +148,90 @@ describe RedRock do
     end
   end
 
-  it "supports matching custom request headers"
+  context "matching multiple headers with the same name" do
+    before do
+      stub_http_request(:get, "localhost:4242").with(:headers => {"Accept" => ["image/jpeg", "image/png"]})
+    end
 
-  it "supports matching multiple headers with the same name"
+    it "matches when both header values are present" do
+      # Curb can't do multiple headers with the same name
+      req = Net::HTTP::Get.new("/")
+      req['Accept'] = ['image/png']
+      req.add_field('Accept', 'image/jpeg')
+      resp = Net::HTTP.start("localhost:4242") {|http|  http.request(req) }
+      resp.should be_an_instance_of Net::HTTPOK
+    end
 
-  it "supports matching requests against a block"
+    it "rejects requests with missing values" do
+      curl = Curl::Easy.http_get "http://localhost:4242/" do |c|
+        c.headers["Accept"] = "image/jpeg"
+      end
+      curl.response_code.should == 500
+    end
+  end
 
-  it "supports basic auth"
+  context "matching requests against a block" do
+    before do
+      stub_request(:post, "localhost:4242").with { |request| request.body == "abc" }
+    end
 
-  it "supports matching URIs against regular expressions"
+    it "matches when the block returns true" do
+      curl = Curl::Easy.http_post "http://localhost:4242", "abc"
+      curl.response_code.should == 200
+    end
 
-  it "supports matching query params using a hash"
+    it "does not match when the block returns false" do
+      curl = Curl::Easy.http_post "http://localhost:4242", "def"
+      curl.response_code.should == 500
+    end
+  end
+
+  context "using basic auth" do
+    before do
+      stub_request(:get, "user:pass@localhost:4242")
+    end
+
+    it "matches when the username and password are correct" do
+      curl = Curl::Easy.http_get "http://localhost:4242/" do |c|
+        c.http_auth_types = :basic
+        c.username = "user"
+        c.password = "pass"
+      end
+      curl.response_code.should == 200
+    end
+  end
+
+  context "matching URIs against regular expressions" do
+    before do
+      stub_request :any, %r(local.*/foo)
+    end
+
+    it "accepts matching requests" do
+      curl = Curl::Easy.http_get "http://localhost:4242/wibble/foo"
+      curl.response_code.should == 200
+    end
+
+    it "rejects non-matching requests" do
+      curl = Curl::Easy.http_get "http://localhost:4242/bar"
+      curl.response_code.should == 500
+    end
+  end
+
+  context "matching query params using a hash" do
+    before do
+      stub_http_request(:get, "localhost:4242").with(:query => {"a" => ["b", "c"]})
+    end
+
+    it "accepts matching requests" do
+      curl = Curl::Easy.http_get "http://localhost:4242?a[]=b&a[]=c"
+      curl.response_code.should == 200
+    end
+
+    it "rejects non-matching requests" do
+      curl = Curl::Easy.http_get "http://localhost:4242?a[]=d"
+      curl.response_code.should == 500
+    end
+  end
 
   it "supports returning a custom response"
 

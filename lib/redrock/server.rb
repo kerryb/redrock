@@ -23,6 +23,8 @@ module RedRock
       begin
         ::Net::HTTP.start(request_headers["HOST"]) do |http|
           request_class = ::Net::HTTP.const_get(http_method.capitalize)
+          path = request.path_info
+          path << "?#{request.query_string}" unless request.query_string.empty?
           request = request_class.new request.path_info, request_headers
           request.body = request_body unless request_body.empty?
           @response = http.request request
