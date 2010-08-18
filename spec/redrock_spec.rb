@@ -401,13 +401,57 @@ Chunky bacon!
     end
   end
 
-  it "supports setting multiple responses using chained methods"
+  context "assertions" do
+    before do
+      stub_request :any, "localhost:4242/foo"
+      Curl::Easy.http_get "http://localhost:4242/foo"
+    end
 
-  it "supports returning a response a given number of times"
+    context "in the test/unit style" do
+      it "can assert requests made" do
+        assert_requested :get, "http://localhost:4242/foo"
+      end
 
-  it "handles test/unit-style assertions"
+      it "can assert requests not made" do
+        assert_not_requested :get, "http://localhost:4242/bar"
+      end
+    end
 
-  it "handles rspec-style assertions"
+    context "in the rspec style" do
+      it "can assert requests made" do
+        RedRock.should have_requested :get, "http://localhost:4242/foo"
+      end
 
-  it "supports clearing stubs and history"
+      it "can assert requests not made" do
+        RedRock.should_not have_requested :get, "http://localhost:4242/bar"
+      end
+    end
+
+    context "in the alternative rspec style" do
+      it "can assert requests made" do
+        request(:get, "http://localhost:4242/foo").should have_been_made
+      end
+
+      it "can assert requests not made" do
+        request(:get, "http://localhost:4242/bar").should_not have_been_made
+      end
+    end
+  end
+
+  context "resetting" do
+    before do
+      stub_request :any, "localhost:4242"
+      Curl::Easy.http_get "http://localhost:4242"
+      reset_webmock
+    end
+
+    it "clears stubs" do
+      curl = Curl::Easy.http_get "http://localhost:4242"
+      curl.response_code.should == 500
+    end
+
+    it "clears history" do
+      request(:get, "http://localhost:4242").should_not have_been_made
+    end
+  end
 end
