@@ -454,4 +454,12 @@ Chunky bacon!
       request(:get, "http://localhost:4242").should_not have_been_made
     end
   end
+
+  it "does not support enabling local requests" do
+    lambda {allow_net_connect!}.should raise_error RuntimeError, "RedRock does not support allowing real connections"
+  end
+
+  it "does not support disabling local requests" do
+    lambda {disable_net_connect!}.should raise_error RuntimeError, "RedRock does not support disabling real connections"
+  end
 end

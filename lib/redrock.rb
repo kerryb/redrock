@@ -17,6 +17,14 @@ module RedRock
     end
   end
 
+  def allow_net_connect!
+    raise "RedRock does not support allowing real connections"
+  end
+
+  def disable_net_connect!
+    raise "RedRock does not support disabling real connections"
+  end
+
   def method_missing name, *args, &block
     super unless Server.instance.respond_to? name
     start unless @server_thread
