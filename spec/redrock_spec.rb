@@ -233,13 +233,53 @@ describe RedRock do
     end
   end
 
-  it "supports returning a custom response"
+  context "returning a custom response" do
+    before do
+      stub_request(:any, "localhost:4242").to_return(:body => "abc", :status => 201,
+                                                     :headers => { "Location" => "nowhere"})
+    end
 
-  it "supports returning a custom response"
+    let(:curl) { Curl::Easy.http_get "http://localhost:4242" }
 
-  it "supports specification of a response body as an IO object"
+    it "returns the specified body" do
+      curl.body_str.should == "abc"
+    end
 
-  it "supports returning a custom status message"
+    it "returns the specified response code" do
+      curl.response_code.should == 201
+    end
+
+    it "returns the specified headers" do
+      curl.header_str.should =~ /location: nowhere/
+    end
+  end
+
+  it "supports specification of a response body as an IO object" do
+    stub_request(:any, "localhost:4242").to_return(:body => StringIO.new("chunky bacon"), :status => 200)
+    curl = Curl::Easy.http_get "http://localhost:4242"
+    curl.body_str.should == "chunky bacon"
+  end
+
+  context "returning a custom status message" do
+    before do
+      stub_request(:any, "localhost:4242").to_return(:status => [500, "Pixies are on strike"])
+    end
+
+    let(:resp) do
+      uri = URI.parse "http://localhost:4242"
+      Net::HTTP.start(uri.host, uri.port) {|http|
+        http.get "/"
+      }
+    end
+
+    it "returns the specified response code" do
+      resp.code.should == "500"
+    end
+
+    it "returns the specified message" do
+      resp.message.should == "Pixies are on strike"
+    end
+  end
 
   it "supports replaying raw responses recorded with curl -is"
 
