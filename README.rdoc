@@ -2,7 +2,7 @@
 
 == What is this?
 
-A wrapper for running WebMock[link:http://github.com/bblimke/webmock] remotely
+A wrapper for running WebMock[http://github.com/bblimke/webmock] remotely
 (ie mocking requests made by an application that's not running in the same
 process as your tests).
 
@@ -12,8 +12,8 @@ If you're testing an application that makes remote web requests, and for some
 reason you can't run the application code directly inside your test framework.
 This might be because you're running integration tests against a stack of
 applications, you're using something like
-Culerity[link:http://github.com/langalex/culerity] or
-Selenium[link:http://seleniumhq.org/], or maybe the application doesn't use one
+Culerity[http://github.com/langalex/culerity] or
+Selenium[http://seleniumhq.org/], or maybe the application doesn't use one
 of the HTTP libraries that WebMock supports, or isn't even written in Ruby.
 
 == Getting started
@@ -47,7 +47,7 @@ you'll have to set up a reverse proxy as well.
 
 == How does it work?
 
-RedRock fires up a thin[link:http://code.macournoyer.com/thin/] server (by
+RedRock fires up a thin[http://code.macournoyer.com/thin/] server (by
 default on port 4242), which attempts to proxy all incoming requests using
 Net::HTTP, at which point they are intercepted by WebMock. You point your
 application under test at this server, instead of the real service it's
@@ -84,5 +84,5 @@ you've had seven years or so.
 
 Version 0.1.0 was released on Whyday, 19 August 2010.
 
-RedRock is intended to replace FakeTTP[link:http://github.com/kerryb/fakettp],
+RedRock is intended to replace FakeTTP[http://github.com/kerryb/fakettp],
 which no-one apart from me and a few colleagues ever used.
