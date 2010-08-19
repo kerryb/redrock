@@ -1,1 +1,88 @@
-TODO...
+= RedRock
+
+== What is this?
+
+A wrapper for running WebMock[link:http://github.com/bblimke/webmock] remotely
+(ie mocking requests made by an application that's not running in the same
+process as your tests).
+
+== When might I want to use it?
+
+If you're testing an application that makes remote web requests, and for some
+reason you can't run the application code directly inside your test framework.
+This might be because you're running integration tests against a stack of
+applications, you're using something like
+Culerity[link:http://github.com/langalex/culerity] or
+Selenium[link:http://seleniumhq.org/], or maybe the application doesn't use one
+of the HTTP libraries that WebMock supports, or isn't even written in Ruby.
+
+== Getting started
+
+  gem install redrock
+
+Somewhere in your tests:
+
+  require "redrock"
+  include RedRock
+
+You can then make most of the same calls you would normally make to WebMock,
+and they will be transparently handled by RedRock. For example:
+
+  stub_request :any, "localhost:4242/chunky/bacon"
+  # ...
+  RedRock.should have_requested :get, "http://localhost:4242/chunky/bacon"
+
+The RedRock server starts automatically when required, but you can start it
+manually if you want to run it on a different port:
+
+  RedRock.start 1234
+
+You can also stop it manually:
+
+  RedRock.stop
+
+If you want to use a host other than localhost, you can map it in
+<tt>/etc/hosts</tt>. If you can't override the port your application talks to,
+you'll have to set up a reverse proxy as well.
+
+== How does it work?
+
+RedRock fires up a thin[link:http://code.macournoyer.com/thin/] server (by
+default on port 4242), which attempts to proxy all incoming requests using
+Net::HTTP, at which point they are intercepted by WebMock. You point your
+application under test at this server, instead of the real service it's
+supposed to interact with.
+
+All calls to WebMock methods in your tests are proxied through to the RedRock
+server, which means that stubs and expectations are effectively being applied
+to the requests being made by the application under test.
+
+=== Unsupported WebMock features
+
+Allowing real requests doesn't really make any sense for RedRock, so if you
+call <tt>allow_net_connect!</tt> or <tt>disable_net_connect!</tt> you'll get an
+error.
+
+Raising exceptions or timing out won't work as expected, because the exceptions
+will be handled in the RedRock server, not the application under test.
+
+== TODO
+
+* Better documentation!
+* Refactor the server, which is currently a small ball of mud.
+
+== Why "RedRock"?
+
+I started with "Remote WebMock". "RWebMock" doesn't exactly trip off the
+tongue, so I thought maybe "RebMock". That sounded like Scooby-Doo saying
+"WebMock", although he'd probably say "RebRock". That sounded almost like
+"RedRock", which is where I stopped.  I'm a bit surprised that there isn't
+already a redrock gem, given that a ruby is basically a red rock, but hey,
+you've had seven years or so.
+
+== Other random stuff
+
+Version 0.1.0 was released on Whyday, 19 August 2010.
+
+RedRock is intended to replace FakeTTP[link:http://github.com/kerryb/fakettp],
+which no-one apart from me and a few colleagues ever used.
