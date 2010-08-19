@@ -29,7 +29,7 @@ You can then make most of the same calls you would normally make to WebMock,
 and they will be transparently handled by RedRock. For example:
 
   stub_request :any, "localhost:4242/chunky/bacon"
-  # ...
+  ...
   RedRock.should have_requested :get, "http://localhost:4242/chunky/bacon"
 
 The RedRock server starts automatically when required, but you can start it
