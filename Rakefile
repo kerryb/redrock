@@ -28,7 +28,8 @@ spec = Gem::Specification.new do |s|
   s.files             = Dir.glob("{spec/**/*,lib/**/*}")
   s.require_paths     = ["lib"]
 
-  s.add_dependency "thin", "~> 1.0"
+  s.add_dependency "webmock"
+  s.add_dependency "thin"
 
   s.add_development_dependency "rspec"
   s.add_development_dependency "curb"
