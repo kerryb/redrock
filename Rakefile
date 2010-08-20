@@ -22,7 +22,7 @@ spec = Gem::Specification.new do |s|
   s.homepage          = "http://github.com/kerryb/redrock"
 
   s.has_rdoc          = true
-  s.extra_rdoc_files  = %w(README.rdoc)
+  s.extra_rdoc_files  = %w(README.rdoc history.txt)
   s.rdoc_options      = %w(--main README.rdoc)
 
   s.files             = Dir.glob("{spec/**/*,lib/**/*}")
@@ -48,7 +48,7 @@ end
 task :package => :gemspec
 
 Rake::RDocTask.new do |rd|
-  rd.rdoc_files.include "README.rdoc", "lib/**"
+  rd.rdoc_files.include %w(README.rdoc history.txt lib/**)
   rd.rdoc_dir = "rdoc"
 end
 

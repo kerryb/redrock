@@ -1,0 +1,7 @@
+= 1.1.1
+
+* Correct gem dependencies
+
+= 1.1.0
+
+* Initial release
