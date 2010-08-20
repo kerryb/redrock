@@ -15,7 +15,7 @@ spec = Gem::Specification.new do |s|
 
   # Change these as appropriate
   s.name              = "redrock"
-  s.version           = "0.1.0"
+  s.version           = "0.1.1"
   s.summary           = "Proxy for using WebMock remotely"
   s.author            = "Kerry Buckley"
   s.email             = "kerryjbuckley@gmail.com"
