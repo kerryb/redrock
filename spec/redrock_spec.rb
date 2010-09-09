@@ -217,7 +217,23 @@ describe RedRock do
     end
   end
 
-  context "matching query params using a hash" do
+  context "matching single-value query params using a hash" do
+    before do
+      stub_http_request(:get, "localhost:4242").with(:query => {"a" => "b"})
+    end
+
+    it "accepts matching requests" do
+      curl = Curl::Easy.http_get "http://localhost:4242?a=b"
+      curl.response_code.should == 200
+    end
+
+    it "rejects non-matching requests" do
+      curl = Curl::Easy.http_get "http://localhost:4242?a=d"
+      curl.response_code.should == 500
+    end
+  end
+
+  context "matching multi-value query params using a hash" do
     before do
       stub_http_request(:get, "localhost:4242").with(:query => {"a" => ["b", "c"]})
     end
@@ -255,9 +271,9 @@ describe RedRock do
   end
 
   it "supports specification of a response body as an IO object" do
-    stub_request(:any, "localhost:4242").to_return(:body => StringIO.new("chunky bacon"), :status => 200)
+    stub_request(:any, "localhost:4242").to_return(:body => File.new(File.expand_path("../response.txt", __FILE__)), :status => 200)
     curl = Curl::Easy.http_get "http://localhost:4242"
-    curl.body_str.should == "chunky bacon"
+    curl.body_str.should == "chunky bacon\n"
   end
 
   context "returning a custom status message" do
