@@ -1,2 +1,2 @@
-# Requires bundler 1.0.0 (gem in bundler --pre)
+source 'http://rubygems.org'
 gemspec :path => "."
