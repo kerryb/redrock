@@ -4,6 +4,12 @@ require File.expand_path("../spec_helper", __FILE__)
 # isn't happening locally.
 
 describe RedRock do
+  before :all  do
+    %w(http_proxy HTTP_PROXY).each do |var|
+      ENV[var] = nil
+    end
+  end
+
   after do
     RedRock.stop
   end
@@ -205,7 +211,7 @@ describe RedRock do
     before do
       stub_request :any, %r(local.*/foo)
     end
-
+require 'metric_fu'
     it "accepts matching requests" do
       curl = Curl::Easy.http_get "http://localhost:4242/wibble/foo"
       curl.response_code.should == 200
