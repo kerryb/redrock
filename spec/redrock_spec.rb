@@ -211,7 +211,7 @@ describe RedRock do
     before do
       stub_request :any, %r(local.*/foo)
     end
-require 'metric_fu'
+
     it "accepts matching requests" do
       curl = Curl::Easy.http_get "http://localhost:4242/wibble/foo"
       curl.response_code.should == 200
