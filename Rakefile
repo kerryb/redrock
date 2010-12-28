@@ -9,7 +9,7 @@ Spec::Rake::SpecTask.new do |t|
   t.libs = ["spec"]
 end
 
-task :default => ["spec"]
+task :default => %w{spec package}
 
 spec = Gem::Specification.new do |s|
 
