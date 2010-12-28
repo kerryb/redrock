@@ -30,11 +30,13 @@ spec = Gem::Specification.new do |s|
   s.files             = Dir.glob("{spec/**/*,lib/**/*}")
   s.require_paths     = ["lib"]
 
-  s.add_dependency "webmock"
+  s.add_dependency "json"
   s.add_dependency "thin"
+  s.add_dependency "webmock", "~> 1.3.0"
 
-  s.add_development_dependency "rspec"
   s.add_development_dependency "curb"
+  s.add_development_dependency "rake"
+  s.add_development_dependency "rspec", "~> 1.3.0"
 end
 
 Rake::GemPackageTask.new(spec) do |pkg|
