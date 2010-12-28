@@ -79,6 +79,7 @@ After cloning the project:
 
 * Better documentation!
 * Refactor the server, which is currently a small ball of mud.
+* Support latest version of WebMock
 
 == Why "RedRock"?
 

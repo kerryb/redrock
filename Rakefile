@@ -15,7 +15,7 @@ spec = Gem::Specification.new do |s|
 
   # Change these as appropriate
   s.name              = "redrock"
-  s.version           = "0.1.1"
+  s.version           = "0.1.2"
   s.summary           = "Proxy for using WebMock remotely"
   s.description       = "Use WebMock to test applications that aren't " +
                         "running in the same process as the tests"
