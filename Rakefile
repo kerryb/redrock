@@ -17,12 +17,14 @@ spec = Gem::Specification.new do |s|
   s.name              = "redrock"
   s.version           = "0.1.1"
   s.summary           = "Proxy for using WebMock remotely"
+  s.description       = "Use WebMock to test applications that aren't " +
+                        "running in the same process as the tests"
   s.author            = "Kerry Buckley"
   s.email             = "kerryjbuckley@gmail.com"
   s.homepage          = "http://github.com/kerryb/redrock"
 
   s.has_rdoc          = true
-  s.extra_rdoc_files  = %w(README.rdoc history.txt)
+  s.extra_rdoc_files  = Dir.glob("{*.rdoc}")
   s.rdoc_options      = %w(--main README.rdoc)
 
   s.files             = Dir.glob("{spec/**/*,lib/**/*}")
@@ -48,7 +50,7 @@ end
 task :package => :gemspec
 
 Rake::RDocTask.new do |rd|
-  rd.rdoc_files.include %w(README.rdoc history.txt lib/**)
+  rd.rdoc_files.include %w(*.rdoc lib/**)
   rd.rdoc_dir = "rdoc"
 end
 
