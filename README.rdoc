@@ -66,6 +66,15 @@ error.
 Raising exceptions or timing out won't work as expected, because the exceptions
 will be handled in the RedRock server, not the application under test.
 
+== Development
+
+After cloning the project:
+
+  gem install bundler # if not already installed
+  rake gemspec # bootstrap gemspec for bundler
+  bundle
+  bundle exec rake
+
 == TODO
 
 * Better documentation!
