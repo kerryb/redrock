@@ -1,7 +1,8 @@
 require File.expand_path("../spec_helper", __FILE__)
 
 # Mostly uses curb to avoid going via net/http, to prove that the stubbing
-# isn't happening locally.
+# isn't happening locally. This seemed like a good idea until WebMock 1.4
+# introduced curb support.
 
 describe RedRock do
   before :all  do
@@ -14,18 +15,99 @@ describe RedRock do
     RedRock.stop
   end
 
+  class TestRequest
+    def self.get url
+      new :get, url
+    end
+
+    def self.post url, body
+      new :post, url, body
+    end
+
+    def initialize method, url, body = nil, headers = {}
+      @method = method
+      @url = url
+      @request_body = body
+      @headers = headers
+    end
+
+    def get
+      Curl::Easy.http_get @url do |request|
+        setup_request request
+      end
+    end
+
+    def post
+      Curl::Easy.http_post @url, @request_body do |request|
+        setup_request request
+      end
+    end
+
+    def setup_request request
+      setup_headers request
+      setup_basic_auth request
+    end
+    private :setup_request
+
+    def setup_headers request
+      @headers.each do |key, value|
+        request.headers[key] = value
+      end
+    end
+    private :setup_headers
+
+    def setup_basic_auth request
+      return unless @username
+      request.http_auth_types = :basic
+      request.username = @username
+      request.password = @password
+    end
+    private :setup_basic_auth
+
+    def response
+      @response ||= send @method
+    end
+    private :response
+
+    def with_headers headers
+      @headers = headers
+      self
+    end
+
+    def with_basic_auth username, password
+      @username = username
+      @password = password
+      self
+    end
+
+    def execute
+      response
+      nil
+    end
+
+    def response_code
+      response.response_code
+    end
+
+    def body
+      response.body_str
+    end
+
+    def headers
+      @response_headers ||= Hash[*(response.header_str.grep(/:/).map {|l| l.strip.split /:\s*/ }.flatten)]
+    end
+  end
+
   context "server" do
     it "listens on port 4242 by default" do
       stub_request :any, "localhost:4242"
-      curl = Curl::Easy.http_get "http://localhost:4242"
-      curl.response_code.should == 200
+      TestRequest.get("http://localhost:4242").response_code.should == 200
     end
 
     it "allows the port to be overridden" do
       RedRock.start 4567
       stub_request :any, "localhost:4567"
-      curl = Curl::Easy.http_get "http://localhost:4567"
-      curl.response_code.should == 200
+      TestRequest.get("http://localhost:4567").response_code.should == 200
     end
 
     it "silently ignores attempts to stop non-running server" do
@@ -39,14 +121,14 @@ describe RedRock do
   end
 
   context "on receipt of an unexpected request" do
-    let(:curl) { Curl::Easy.http_get "http://localhost:4567" }
+    let(:request) { TestRequest.get "http://localhost:4567" }
 
     it "returns a 500 error" do
-      curl.response_code.should == 500
+      request.response_code.should == 500
     end
 
     it "returns a useful message in the body" do
-      curl.body_str.should =~ /Real HTTP connections are disabled/
+      request.body.should =~ /Real HTTP connections are disabled/
     end
   end
 
@@ -56,13 +138,11 @@ describe RedRock do
     end
 
     it "accepts matching requests" do
-      curl = Curl::Easy.http_get "http://localhost:4242/foo"
-      curl.response_code.should == 200
+      TestRequest.get("http://localhost:4242/foo").response_code.should == 200
     end
 
     it "rejects non-matching requests" do
-      curl = Curl::Easy.http_get "http://localhost:4242/bar"
-      curl.response_code.should == 500
+      TestRequest.get("http://localhost:4242/bar").response_code.should == 500
     end
   end
 
@@ -72,31 +152,23 @@ describe RedRock do
     end
 
     it "accepts matching requests" do
-      curl = Curl::Easy.http_post "http://localhost:4242/foo", "onion" do |c|
-        c.headers["bacon-preference"] = "chunky"
-      end
-      curl.response_code.should == 200
+      TestRequest.post("http://localhost:4242/foo", "onion").
+        with_headers("bacon-preference" => "chunky").response_code.should == 200
     end
 
     it "rejects requests with the wrong URI" do
-      curl = Curl::Easy.http_post "http://localhost:4242/bar", "onion" do |c|
-        c.headers["bacon-preference"] = "chunky"
-      end
-      curl.response_code.should == 500
+      TestRequest.post("http://localhost:4242/bar", "onion").
+        with_headers("bacon-preference" => "chunky").response_code.should == 500
     end
 
     it "rejects requests with the wrong body" do
-      curl = Curl::Easy.http_post "http://localhost:4242/foo", "cabbage" do |c|
-        c.headers["bacon-preference"] = "chunky"
-      end
-      curl.response_code.should == 500
+      TestRequest.post("http://localhost:4242/foo", "chunky").
+        with_headers("bacon-preference" => "chunky").response_code.should == 500
     end
 
     it "rejects requests with the wrong headers" do
-      curl = Curl::Easy.http_post "http://localhost:4242/foo", "onion" do |c|
-        c.headers["bacon-preference"] = "streaky"
-      end
-      curl.response_code.should == 500
+      TestRequest.post("http://localhost:4242/foo", "onion").
+        with_headers("bacon-preference" => "streaky").response_code.should == 500
     end
   end
 
@@ -106,24 +178,18 @@ describe RedRock do
     end
 
     it "accepts matching requests" do
-      curl = Curl::Easy.http_post "http://localhost:4242/foo", "onion" do |c|
-        c.headers["bacon-preference"] = "chunky"
-      end
-      curl.response_code.should == 200
+      TestRequest.post("http://localhost:4242/foo", "onion").
+        with_headers("bacon-preference" => "chunky").response_code.should == 200
     end
 
     it "rejects requests with the wrong body" do
-      curl = Curl::Easy.http_post "http://localhost:4242/foo", "neon" do |c|
-        c.headers["bacon-preference"] = "crispy"
-      end
-      curl.response_code.should == 500
+      TestRequest.post("http://localhost:4242/foo", "neon").
+        with_headers("bacon-preference" => "chunky").response_code.should == 500
     end
 
     it "rejects requests with the wrong headers" do
-      curl = Curl::Easy.http_post "http://localhost:4242/foo", "bunion" do |c|
-        c.headers["bacon-preference"] = "streaky"
-      end
-      curl.response_code.should == 500
+      TestRequest.post("http://localhost:4242/foo", "bunion").
+        with_headers("bacon-preference" => "streaky").response_code.should == 500
     end
   end
 
@@ -133,24 +199,18 @@ describe RedRock do
     end
 
     it "matches URL-encoded data" do
-      curl = Curl::Easy.http_post "http://localhost:4242/", "data[a]=1&data[b]=five" do |c|
-        c.headers["Content-Type"] = "application/x-www-form-urlencoded"
-      end
-      curl.response_code.should == 200
+      TestRequest.post("http://localhost:4242/", "data[a]=1&data[b]=five").
+        with_headers("Content-Type" => "application/x-www-form-urlencoded").response_code.should == 200
     end
 
     it "matches JSON data" do
-      curl = Curl::Easy.http_post "http://localhost:4242/", %({"data":{"a":"1","b":"five"}}) do |c|
-        c.headers["Content-Type"] = "application/json"
-      end
-      curl.response_code.should == 200
+      TestRequest.post("http://localhost:4242/", %[{"data":{"a":"1","b":"five"}}]).
+        with_headers("Content-Type" => "application/json").response_code.should == 200
     end
 
     it "matches XML data" do
-      curl = Curl::Easy.http_post "http://localhost:4242/", %(<data a="1" b="five" />) do |c|
-        c.headers["Content-Type"] = "application/xml"
-      end
-      curl.response_code.should == 200
+      TestRequest.post("http://localhost:4242/", %[<data a="1" b="five" />]).
+        with_headers("Content-Type" => "application/xml").response_code.should == 200
     end
   end
 
@@ -161,6 +221,7 @@ describe RedRock do
 
     it "matches when both header values are present" do
       # Curb can't do multiple headers with the same name
+      #TODO make this consistent with other tests
       req = Net::HTTP::Get.new("/")
       req['Accept'] = ['image/png']
       req.add_field('Accept', 'image/jpeg')
@@ -169,10 +230,8 @@ describe RedRock do
     end
 
     it "rejects requests with missing values" do
-      curl = Curl::Easy.http_get "http://localhost:4242/" do |c|
-        c.headers["Accept"] = "image/jpeg"
-      end
-      curl.response_code.should == 500
+      TestRequest.get("http://localhost:4242/").
+        with_headers("Accept" => "image/jpeg").response_code.should == 500
     end
   end
 
@@ -182,13 +241,11 @@ describe RedRock do
     end
 
     it "matches when the block returns true" do
-      curl = Curl::Easy.http_post "http://localhost:4242", "abc"
-      curl.response_code.should == 200
+      TestRequest.post("http://localhost:4242", "abc").response_code.should == 200
     end
 
     it "does not match when the block returns false" do
-      curl = Curl::Easy.http_post "http://localhost:4242", "def"
-      curl.response_code.should == 500
+      TestRequest.post("http://localhost:4242", "def").response_code.should == 500
     end
   end
 
@@ -198,12 +255,18 @@ describe RedRock do
     end
 
     it "matches when the username and password are correct" do
-      curl = Curl::Easy.http_get "http://localhost:4242/" do |c|
-        c.http_auth_types = :basic
-        c.username = "user"
-        c.password = "pass"
-      end
-      curl.response_code.should == 200
+      TestRequest.get("http://localhost:4242/").
+        with_basic_auth("user", "pass").response_code.should == 200
+    end
+
+    it "fails when the username is incorrect" do
+      TestRequest.get("http://localhost:4242/").
+        with_basic_auth("hacker", "pass").response_code.should == 500
+    end
+
+    it "fails when the password is incorrect" do
+      TestRequest.get("http://localhost:4242/").
+        with_basic_auth("user", "wrong").response_code.should == 500
     end
   end
 
@@ -213,13 +276,11 @@ describe RedRock do
     end
 
     it "accepts matching requests" do
-      curl = Curl::Easy.http_get "http://localhost:4242/wibble/foo"
-      curl.response_code.should == 200
+      TestRequest.get("http://localhost:4242/wibble/foo").response_code.should == 200
     end
 
     it "rejects non-matching requests" do
-      curl = Curl::Easy.http_get "http://localhost:4242/bar"
-      curl.response_code.should == 500
+      TestRequest.get("http://localhost:4242/bar").response_code.should == 500
     end
   end
 
@@ -229,13 +290,11 @@ describe RedRock do
     end
 
     it "accepts matching requests" do
-      curl = Curl::Easy.http_get "http://localhost:4242?a=b"
-      curl.response_code.should == 200
+      TestRequest.get("http://localhost:4242?a=b").response_code.should == 200
     end
 
     it "rejects non-matching requests" do
-      curl = Curl::Easy.http_get "http://localhost:4242?a=d"
-      curl.response_code.should == 500
+      TestRequest.get("http://localhost:4242?a=d").response_code.should == 500
     end
   end
 
@@ -245,13 +304,11 @@ describe RedRock do
     end
 
     it "accepts matching requests" do
-      curl = Curl::Easy.http_get "http://localhost:4242?a[]=b&a[]=c"
-      curl.response_code.should == 200
+      TestRequest.get("http://localhost:4242?a[]=b&a[]=c").response_code.should == 200
     end
 
     it "rejects non-matching requests" do
-      curl = Curl::Easy.http_get "http://localhost:4242?a[]=d"
-      curl.response_code.should == 500
+      TestRequest.get("http://localhost:4242?a[]=d").response_code.should == 500
     end
   end
 
@@ -261,25 +318,24 @@ describe RedRock do
                                                      :headers => { "Location" => "nowhere"})
     end
 
-    let(:curl) { Curl::Easy.http_get "http://localhost:4242" }
+    let(:response) { TestRequest.get "http://localhost:4242" }
 
     it "returns the specified body" do
-      curl.body_str.should == "abc"
+      response.body.should == "abc"
     end
 
     it "returns the specified response code" do
-      curl.response_code.should == 201
+      response.response_code.should == 201
     end
 
     it "returns the specified headers" do
-      curl.header_str.should =~ /location: nowhere/
+      response.headers["location"].should == "nowhere"
     end
   end
 
   it "supports specification of a response body as an IO object" do
     stub_request(:any, "localhost:4242").to_return(:body => File.new(File.expand_path("../response.txt", __FILE__)), :status => 200)
-    curl = Curl::Easy.http_get "http://localhost:4242"
-    curl.body_str.should == "chunky bacon\n"
+    TestRequest.get("http://localhost:4242").body.should == "chunky bacon\n"
   end
 
   context "returning a custom status message" do
@@ -289,6 +345,7 @@ describe RedRock do
 
     let(:resp) do
       uri = URI.parse "http://localhost:4242"
+      #TODO make this consistent with other tests
       Net::HTTP.start(uri.host, uri.port) {|http|
         http.get "/"
       }
@@ -321,8 +378,7 @@ Chunky bacon!
 
     shared_examples_for "a raw response" do
       it "returns the response" do
-        curl = Curl::Easy.http_get "http://localhost:4242"
-        curl.body_str.should == "Chunky bacon!"
+        TestRequest.get("http://localhost:4242").body.should == "Chunky bacon!"
       end
     end
 
@@ -353,8 +409,7 @@ Chunky bacon!
   context "dynamically evaluating responses" do
     shared_examples_for "a dynamic response" do
       it "returns the correct response" do
-        curl = Curl::Easy.http_post "http://localhost:4242", "!nocab yknuhC"
-        curl.body_str.should == "Chunky bacon!"
+        TestRequest.post("http://localhost:4242", "!nocab yknuhC").body.should == "Chunky bacon!"
       end
     end
 
@@ -386,11 +441,7 @@ Chunky bacon!
   context "setting multiple responses" do
     shared_examples_for "multiple responses" do
       it "returns the correct values" do
-        curl = Curl::Easy.new "http://localhost:4242"
-        (1..3).map do
-          curl.http_get
-          curl.body_str
-        end.should == %w(chunky chunky bacon)
+        (1..3).map { TestRequest.get("http://localhost:4242").body }.should == %w(chunky chunky bacon)
       end
     end
 
@@ -426,7 +477,7 @@ Chunky bacon!
   context "assertions" do
     before do
       stub_request :any, "localhost:4242/foo"
-      Curl::Easy.http_get "http://localhost:4242/foo"
+      TestRequest.get("http://localhost:4242/foo").execute
     end
 
     context "in the test/unit style" do
@@ -463,13 +514,12 @@ Chunky bacon!
   context "resetting" do
     before do
       stub_request :any, "localhost:4242"
-      Curl::Easy.http_get "http://localhost:4242"
+      TestRequest.get("http://localhost:4242").execute
       reset_webmock
     end
 
     it "clears stubs" do
-      curl = Curl::Easy.http_get "http://localhost:4242"
-      curl.response_code.should == 500
+      TestRequest.get("http://localhost:4242").response_code.should == 500
     end
 
     it "clears history" do
