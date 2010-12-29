@@ -1,12 +1,10 @@
 require "rubygems"
 require "rake/gempackagetask"
 require "rake/rdoctask"
+require "rspec/core/rake_task"
 
-require "spec"
-require "spec/rake/spectask"
-Spec::Rake::SpecTask.new do |t|
-  t.spec_opts = %w(--format specdoc --colour)
-  t.libs = ["spec"]
+RSpec::Core::RakeTask.new do |t|
+  t.rspec_opts = %w(--format Fuubar --colour)
 end
 
 task :default => %w{spec package}
@@ -35,8 +33,9 @@ spec = Gem::Specification.new do |s|
   s.add_dependency "webmock", "~> 1.3.0"
 
   s.add_development_dependency "curb"
+  s.add_development_dependency "fuubar"
   s.add_development_dependency "rake"
-  s.add_development_dependency "rspec", "~> 1.3.0"
+  s.add_development_dependency "rspec", "~> 2.0"
 end
 
 Rake::GemPackageTask.new(spec) do |pkg|

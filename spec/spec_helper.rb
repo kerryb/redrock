@@ -1,6 +1,6 @@
 $:.unshift File.expand_path("../../lib", __FILE__)
 require "rubygems"
-require "spec"
+require "rspec"
 require "curb"
 require "stringio"
 require "redrock"
