@@ -10,7 +10,20 @@ RSpec::Core::RakeTask.new do |t|
   t.rspec_opts = %w{--format Fuubar --colour}
 end
 
-task :default => %w{spec package}
+task :default => %w{compatibility package}
+
+task :compatibility do
+  results = {}
+  versions = %x{gem list -ra webmock}.match(/\((.*)\)/)[1].split(", ")
+  versions.each do |version|
+    $stderr.puts "Testing against webmock #{version}..."
+    results[version] = system "export WEBMOCK_VERSION=#{version};bundle;bundle exec rake spec"
+  end
+  $stderr.puts "Compatibility results:"
+  results.keys.sort.each do |version|
+    $stderr.puts "  webmock #{version}:\t#{results[version]}"
+  end
+end
 
 task :package do
   %x{gem build redrock.gemspec}
