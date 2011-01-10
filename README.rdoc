@@ -45,6 +45,20 @@ If you want to use a host other than localhost, you can map it in
 <tt>/etc/hosts</tt>. If you can't override the port your application talks to,
 you'll have to set up a reverse proxy as well.
 
+== Compatibility
+
+RedRock has been tested with the following versions of WebMock:
+
+* 1.3.0
+* 1.3.1
+* 1.3.2
+* 1.3.3
+* 1.3.4
+* 1.3.5
+
+It probably works with later versions too, but I need to rework RedRock's tests
+to be certain. Watch this space.
+
 == How does it work?
 
 RedRock fires up a thin[http://code.macournoyer.com/thin/] server (by
