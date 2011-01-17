@@ -7,11 +7,11 @@ class TestRequest
     new :post, url, body
   end
 
-  def initialize method, url, body = nil, headers = {}
+  def initialize method, url, body = nil
     @method = method
     @url = url
     @request_body = body
-    @headers = headers
+    @headers = {}
   end
 
   def get
