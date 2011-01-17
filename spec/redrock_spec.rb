@@ -1,14 +1,14 @@
 require File.expand_path("../spec_helper", __FILE__)
 
-# Mostly uses curb to avoid going via net/http, to prove that the stubbing
-# isn't happening locally. This seemed like a good idea until WebMock 1.4
-# introduced curb support.
-
 describe RedRock do
   before :all  do
     %w(http_proxy HTTP_PROXY).each do |var|
       ENV[var] = nil
     end
+  end
+
+  before do
+    WebMock.allow_net_connect!
   end
 
   after do

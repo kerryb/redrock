@@ -13,6 +13,7 @@ module RedRock
     include WebMock::Matchers
 
     def call env
+      WebMock.disable_net_connect!
       request = Rack::Request.new env
       http_method = request.request_method
       request_body = request.body.read
