@@ -1,5 +1,12 @@
 = RedRock
 
+== WARNING
+
+This was a bit of an experiment that I never really needed to use, so hasn't
+been maintained.
+
+You might find Moxy[http://jondot.github.com/moxy/] a bit more useful.
+
 == What is this?
 
 A wrapper for running WebMock[http://github.com/bblimke/webmock] remotely
